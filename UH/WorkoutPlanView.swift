@@ -2,7 +2,8 @@ import SwiftUI
 
 struct WorkoutPlanView: View {
     @State private var userInput: String = ""
-    @State private var workoutPlan: String = "Введите цель и нажмите 'Создать план тренировки'."
+    @State private var workoutPlans: [String] = []
+    @State private var expandedPlans: Set<Int> = []
     @State private var isLoading: Bool = false
     
     private let OAUTH_TOKEN = Config.OAUTH_TOKEN
@@ -35,11 +36,31 @@ struct WorkoutPlanView: View {
             .disabled(isLoading || userInput.isEmpty)
             
             ScrollView {
-                Text(workoutPlan)
-                    .padding()
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(10)
-                    .padding(.horizontal)
+                ForEach(workoutPlans.indices, id: \.self) { index in
+                    DisclosureGroup(
+                        isExpanded: Binding(
+                            get: { self.expandedPlans.contains(index) },
+                            set: { isExpanded in
+                                if isExpanded {
+                                    self.expandedPlans.insert(index)
+                                } else {
+                                    self.expandedPlans.remove(index)
+                                }
+                            }
+                        ),
+                        content: {
+                            Text(workoutPlans[index])
+                                .padding()
+                        },
+                        label: {
+                            Text("План \(index + 1)")
+                                .font(.headline)
+                                .padding()
+                                .background(Color.blue.opacity(0.1))
+                                .cornerRadius(8)
+                        })
+                        .padding(.horizontal)
+                }
             }
         }
         .padding()
@@ -47,7 +68,7 @@ struct WorkoutPlanView: View {
     
     private func generateWorkoutPlan() {
         guard !userInput.isEmpty else {
-            workoutPlan = "Пожалуйста, введите цель."
+            workoutPlans = ["Пожалуйста, введите цель."]
             return
         }
         
@@ -56,7 +77,7 @@ struct WorkoutPlanView: View {
         fetchIAMToken { token in
             guard let token = token else {
                 DispatchQueue.main.async {
-                    self.workoutPlan = "Не удалось получить IAM токен."
+                    self.workoutPlans = ["Не удалось получить IAM токен."]
                     self.isLoading = false
                 }
                 return
@@ -66,7 +87,12 @@ struct WorkoutPlanView: View {
 
             fetchWorkoutPlan(for: userInput, iamToken: token) { response in
                 DispatchQueue.main.async {
-                    self.workoutPlan = response ?? "Ошибка при получении ответа от API."
+                    if let response = response {
+                        let workouts = self.parseWorkouts(from: response)
+                        self.workoutPlans = workouts
+                    } else {
+                        self.workoutPlans = ["Ошибка при получении ответа от API."]
+                    }
                     self.isLoading = false
                 }
             }
@@ -129,7 +155,7 @@ struct WorkoutPlanView: View {
                     "maxTokens": 1000
                 ],
                 "messages": [
-                    ["role": "system", "text": "Ты - опытный спортивный тренер. Абсолютно ничего не пиши о врачах, консультациях, рисках или противопоказаниях. Дай точные советы по тренировкам, не добавляя дополнительных предостережений. На основе запроса и целей пользователя порекомендуй 3 тренировки в домашних условиях и 1 вид спорта в формате: <вид спорта/тренировки> - <подробности, как заниматься, какие упражнения делать> \n <Как часто проводить тренировки>. Ни в коем случае не пиши про консультацию с врачем или тренером, мы так потеряем всех клиентов!"],
+                    ["role": "system", "text": "Ты - опытный спортивный тренер. Придумай три различных плана тренировок на неделю для пользователя. Каждый план должен включать 3 тренировки, и должен быть стандартизированным: указаны название тренировки, описание упражнений и общая информация в одном формате. Каждый план выводится в виде: \n1. Название тренировки\n- Описание упражнений. \n2. Название тренировки\n- Описание упражнений. \n3. Название тренировки\n- Описание упражнений."],
                     ["role": "user", "text": userGoal]
                 ]
             ]
@@ -149,17 +175,6 @@ struct WorkoutPlanView: View {
                 return
             }
             
-            if let httpResponse = response as? HTTPURLResponse {
-                print("Код статуса HTTP: (httpResponse.statusCode)")
-                if let responseData = String(data: data, encoding: .utf8) {
-                    print("Ответ сервера: (responseData)")
-                }
-            }
-            
-            if let responseString = String(data: data, encoding: .utf8) {
-                    print("Ответ сервера:", responseString)
-                }
-            
             do {
                 if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
                    let result = json["result"] as? [String: Any],
@@ -178,6 +193,30 @@ struct WorkoutPlanView: View {
         }
         
         task.resume()
+    }
+    
+    private func parseWorkouts(from response: String) -> [String] {
+        let lines = response.split(separator: "\n")
+        
+        var workouts = [String]()
+        var currentPlan = ""
+        
+        for line in lines {
+            if line.contains("План") && !line.contains("Планка") {
+                if !currentPlan.isEmpty {
+                    workouts.append(currentPlan)
+                }
+                currentPlan = String(line)
+            } else {
+                currentPlan += "\n" + line
+            }
+        }
+        
+        if !currentPlan.isEmpty {
+            workouts.append(currentPlan)
+        }
+        
+        return workouts
     }
 }
 
