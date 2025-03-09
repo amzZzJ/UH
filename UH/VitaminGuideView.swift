@@ -1,6 +1,5 @@
 import SwiftUI
 
-// Модель данных для витамина
 struct Vitamin: Identifiable {
     let id = UUID()
     let name: String
@@ -9,7 +8,6 @@ struct Vitamin: Identifiable {
 }
 
 struct VitaminGuideView: View {
-    // Данные о витаминах
     let vitamins: [Vitamin] = [
         Vitamin(name: "Витамин A",
                 shortDescription: "Полезен для зрения и иммунитета",
@@ -55,17 +53,12 @@ struct VitaminGuideView: View {
     }
 }
 
-// Экран с подробной информацией о витамине
 struct VitaminDetailView: View {
     let vitamin: Vitamin
     
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 15) {
-                Text(vitamin.name)
-                    .font(.largeTitle)
-                    .bold()
-                
                 Text(vitamin.detailedDescription)
                     .font(.body)
                     .padding(.top, 5)
@@ -78,7 +71,6 @@ struct VitaminDetailView: View {
     }
 }
 
-// Превью экрана
 struct VitaminGuideView_Previews: PreviewProvider {
     static var previews: some View {
         VitaminGuideView()
