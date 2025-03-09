@@ -1,0 +1,18 @@
+//
+//  WorkoutPlanViewController.swift
+//  UH
+//
+//  Created by Amina on 08.03.2025.
+//
+
+import SwiftUI
+
+struct WorkoutPlanViewController: View {
+    var body: some View {
+        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+    }
+}
+
+#Preview {
+    WorkoutPlanViewController()
+}
