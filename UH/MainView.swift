@@ -9,12 +9,10 @@ struct MainView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                Color("PaleYellow")
-                    .edgesIgnoringSafeArea(.all)
                 VStack(spacing: 20) {
                     ZStack {
                         RoundedRectangle(cornerRadius: 150)
-                            .fill(Color("DarkBlue"))
+                            .fill(Color.blue)
                             .frame(width: 430, height: 200)
                             .offset(y: -100)
                         
@@ -24,9 +22,9 @@ struct MainView: View {
                             }) {
                                 Image(systemName: "chevron.left")
                                     .font(.title2)
-                                    .foregroundColor(Color("DarkBlue"))
+                                    .foregroundColor(Color.blue)
                                     .frame(width: 60, height: 60)
-                                    .background(Color.white)
+                                    .background(.white)
                                     .cornerRadius(8)
                                     .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 5)
                             }
@@ -35,8 +33,8 @@ struct MainView: View {
                                 .font(.headline)
                                 .fontWeight(.semibold)
                                 .frame(width: 100, height: 60)
-                                .foregroundStyle(Color("DarkBlue"))
-                                .background(Color.white)
+                                .foregroundStyle(Color.blue)
+                                .background(.white)
                                 .cornerRadius(8)
                                 .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 5)
                                 .multilineTextAlignment(.center)
@@ -46,7 +44,7 @@ struct MainView: View {
                             }) {
                                 Image(systemName: "chevron.right")
                                     .font(.title2)
-                                    .foregroundColor(Color("DarkBlue"))
+                                    .foregroundColor(Color.blue)
                                     .frame(width: 60, height: 60)
                                     .background(Color.white)
                                     .cornerRadius(8)
@@ -61,7 +59,7 @@ struct MainView: View {
                     VStack(spacing: 20) {
                         ZStack {
                             RoundedRectangle(cornerRadius: 40)
-                                .fill(Color("DarkBlue"))
+                                .fill(Color.blue)
                                 .frame(width: 390, height: 300)
                                 .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 5)
                             
@@ -115,7 +113,7 @@ struct MainView: View {
                                 .fontWeight(.semibold)
                                 .foregroundColor(.white)
                                 .frame(width: 170, height: 100)
-                                .background(Color("DarkBlue"))
+                                .background(Color.blue)
                                 .cornerRadius(12)
                                 .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 5)
                         }
@@ -126,7 +124,7 @@ struct MainView: View {
                                 .fontWeight(.semibold)
                                 .foregroundColor(.white)
                                 .frame(width: 170, height: 100)
-                                .background(Color("DarkBlue"))
+                                .background(Color.blue)
                                 .cornerRadius(12)
                                 .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 5)
                         }

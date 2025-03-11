@@ -137,19 +137,33 @@ struct VitaminGuideView: View {
     
     var body: some View {
         NavigationView {
-            List(vitamins) { vitamin in
-                NavigationLink(destination: VitaminDetailView(vitamin: vitamin)) {
-                    VStack(alignment: .leading) {
-                        Text(vitamin.name)
-                            .font(.headline)
-                        Text(vitamin.shortDescription)
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
+            VStack {
+                List(vitamins) { vitamin in
+                    NavigationLink(destination: VitaminDetailView(vitamin: vitamin)) {
+                        VStack(alignment: .leading) {
+                            Text(vitamin.name)
+                                .font(.headline)
+                            Text(vitamin.shortDescription)
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                        }
+                        .padding(.vertical, 5)
                     }
-                    .padding(.vertical, 5)
+                }
+
+                Spacer()
+
+                NavigationLink(destination: VitaminSelectionView()) {
+                    Text("Подобрать витамины")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .padding()
+                            .background(Color.blue)
+                            .cornerRadius(10)
+                            .padding(.bottom)
                 }
             }
-            .navigationTitle("Справочник витаминов")
+            .navigationTitle("Справочник")
         }
     }
 }
