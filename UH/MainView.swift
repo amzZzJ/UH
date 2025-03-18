@@ -131,6 +131,31 @@ struct MainView: View {
                     }
                     .padding(.top, 20)
                     
+                    HStack {
+                        NavigationLink(destination: WaterTrackerView()) {
+                            Text("Трекер воды")
+                                .font(.body)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.white)
+                                .frame(width: 170, height: 100)
+                                .background(Color.blue)
+                                .cornerRadius(12)
+                                .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 5)
+                        }
+                        
+                        NavigationLink(destination: WaterTrackerView()) {
+                            Text("Питание")
+                                .font(.body)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.white)
+                                .frame(width: 170, height: 100)
+                                .background(Color.blue)
+                                .cornerRadius(12)
+                                .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 5)
+                        }
+                    }
+                    .padding(.top, 20)
+                    
                     Spacer()
                 }
                 .padding()
