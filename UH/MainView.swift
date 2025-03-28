@@ -2,6 +2,8 @@ import SwiftUI
 import EventKit
 
 struct MainView: View {
+    @Environment(\.managedObjectContext) private var viewContext
+
     @State private var currentDate = Date()
     @State private var events: [EKEvent] = []
     private let eventStore = EKEventStore()
@@ -157,7 +159,7 @@ struct MainView: View {
                     .padding(.top, 20)
                     
                     HStack {
-                        NavigationLink(destination: CalendarView()) {
+                        NavigationLink(destination: CalendarView().environment(\.managedObjectContext, viewContext)) {
                             Text("Календарь")
                                 .font(.body)
                                 .fontWeight(.semibold)
