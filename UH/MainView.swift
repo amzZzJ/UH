@@ -1,13 +1,19 @@
 import SwiftUI
-import EventKit
 
 struct MainView: View {
     @Environment(\.managedObjectContext) private var viewContext
 
     @State private var currentDate = Date()
-    @State private var events: [EKEvent] = []
-    private let eventStore = EKEventStore()
-    
+    @State private var showWorkoutScreen = false
+
+    @FetchRequest(
+        entity: Workout.entity(),
+        sortDescriptors: [
+            NSSortDescriptor(keyPath: \Workout.time, ascending: true),
+            NSSortDescriptor(keyPath: \Workout.date, ascending: true)
+        ]
+    ) var workouts: FetchedResults<Workout>
+
     var body: some View {
         NavigationView {
             ZStack {
@@ -17,7 +23,7 @@ struct MainView: View {
                             .fill(Color.blue)
                             .frame(width: 430, height: 200)
                             .offset(y: -100)
-                        
+
                         HStack(spacing: 30) {
                             Button(action: {
                                 changeDate(by: -1)
@@ -30,7 +36,7 @@ struct MainView: View {
                                     .cornerRadius(8)
                                     .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 5)
                             }
-                            
+
                             Text(formatDate(currentDate))
                                 .font(.headline)
                                 .fontWeight(.semibold)
@@ -39,8 +45,7 @@ struct MainView: View {
                                 .background(.white)
                                 .cornerRadius(8)
                                 .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 5)
-                                .multilineTextAlignment(.center)
-                            
+
                             Button(action: {
                                 changeDate(by: 1)
                             }) {
@@ -57,14 +62,14 @@ struct MainView: View {
                     }
                     .padding(.horizontal)
                     .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 5)
-                    
+
                     VStack(spacing: 20) {
                         ZStack {
                             RoundedRectangle(cornerRadius: 40)
                                 .fill(Color.blue)
                                 .frame(width: 390, height: 300)
                                 .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 5)
-                            
+
                             VStack(alignment: .center, spacing: 10) {
                                 Text("ПЛАН НА ДЕНЬ")
                                     .font(.headline)
@@ -72,31 +77,34 @@ struct MainView: View {
                                     .foregroundColor(.white)
                                     .multilineTextAlignment(.center)
                                     .padding(.bottom, 10)
-                                
-                                if events.isEmpty {
-                                    Text("Нет событий")
+
+                                let startOfDay = Calendar.current.startOfDay(for: currentDate)
+                                let endOfDay = Calendar.current.date(byAdding: .day, value: 1, to: startOfDay)!
+
+                                let todaysWorkouts = workouts.filter { workout in
+                                    guard let workoutDate = workout.date else { return false }
+
+                                    if workout.type == "Разовая" {
+                                        return workoutDate >= startOfDay && workoutDate < endOfDay
+                                    }
+
+                                    if workout.type == "Ежедневная" {
+                                        return true
+                                    }
+
+                                    return false
+                                }
+
+                                if todaysWorkouts.isEmpty {
+                                    Text("Нет тренировок на сегодня")
                                         .font(.subheadline)
                                         .foregroundColor(.white)
                                         .padding()
                                 } else {
                                     ScrollView {
                                         VStack(alignment: .leading, spacing: 10) {
-                                            ForEach(events, id: \.eventIdentifier) { event in
-                                                HStack {
-                                                    VStack(alignment: .leading) {
-                                                        Text(event.title ?? "Без названия")
-                                                            .font(.headline)
-                                                            .foregroundColor(.white)
-                                                        Text(event.startDate, style: .time)
-                                                            .font(.subheadline)
-                                                            .foregroundColor(.white.opacity(0.7))
-                                                    }
-                                                    Spacer()
-                                                }
-                                                .padding(10)
-                                                .frame(maxWidth: .infinity)
-                                                .background(Color.white.opacity(0.1))
-                                                .cornerRadius(10)
+                                            ForEach(todaysWorkouts, id: \.id) { workout in
+                                                WorkoutCard(workout: workout)
                                             }
                                         }
                                     }
@@ -108,80 +116,60 @@ struct MainView: View {
                         }
                     }
 
-                    HStack {
-                        NavigationLink(destination: VitaminGuideView()) {
-                            Text("Витамины")
-                                .font(.body)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.white)
-                                .frame(width: 170, height: 100)
-                                .background(Color.blue)
-                                .cornerRadius(12)
-                                .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 5)
+                    VStack(spacing: 20) {
+                        HStack {
+                            NavigationLink(destination: VitaminGuideView()) {
+                                Text("Витамины")
+                                    .font(.body)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.white)
+                                    .frame(width: 170, height: 100)
+                                    .background(Color.blue)
+                                    .cornerRadius(12)
+                                    .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 5)
+                            }
+
+                            NavigationLink(destination: WaterTrackerView()) {
+                                Text("Трекер воды")
+                                    .font(.body)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.white)
+                                    .frame(width: 170, height: 100)
+                                    .background(Color.blue)
+                                    .cornerRadius(12)
+                                    .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 5)
+                            }
                         }
-                        
-                        NavigationLink(destination: WorkoutPlanView()) {
-                            Text("Тренировки")
-                                .font(.body)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.white)
-                                .frame(width: 170, height: 100)
-                                .background(Color.blue)
-                                .cornerRadius(12)
-                                .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 5)
-                        }
-                    }
-                    .padding(.top, 20)
-                    
-                    HStack {
-                        NavigationLink(destination: WaterTrackerView()) {
-                            Text("Трекер воды")
-                                .font(.body)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.white)
-                                .frame(width: 170, height: 100)
-                                .background(Color.blue)
-                                .cornerRadius(12)
-                                .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 5)
-                        }
-                        
-                        NavigationLink(destination: WaterTrackerView()) {
-                            Text("Питание")
-                                .font(.body)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.white)
-                                .frame(width: 170, height: 100)
-                                .background(Color.blue)
-                                .cornerRadius(12)
-                                .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 5)
-                        }
-                    }
-                    .padding(.top, 20)
-                    
-                    HStack {
-                        NavigationLink(destination: CalendarView().environment(\.managedObjectContext, viewContext)) {
-                            Text("Календарь")
-                                .font(.body)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.white)
-                                .frame(width: 170, height: 100)
-                                .background(Color.blue)
-                                .cornerRadius(12)
-                                .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 5)
+
+                        HStack {
+                            NavigationLink(destination: WaterTrackerView()) {
+                                Text("Питание")
+                                    .font(.body)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.white)
+                                    .frame(width: 170, height: 100)
+                                    .background(Color.blue)
+                                    .cornerRadius(12)
+                                    .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 5)
+                            }
+
+                            NavigationLink(destination: CalendarView()) {
+                                Text("Каледарь")
+                                    .font(.body)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.white)
+                                    .frame(width: 170, height: 100)
+                                    .background(Color.blue)
+                                    .cornerRadius(12)
+                                    .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 5)
+                            }
                         }
                     }
                     .padding(.top, 20)
 
-                    
                     Spacer()
                 }
                 .padding()
-                .onAppear {
-                    requestAccessAndLoadEvents()
-                }
-                .onChange(of: currentDate) { _ in
-                    loadEvents(for: currentDate)
-                }
             }
             .navigationBarHidden(true)
         }
@@ -195,24 +183,6 @@ struct MainView: View {
 
     private func changeDate(by days: Int) {
         currentDate = Calendar.current.date(byAdding: .day, value: days, to: currentDate) ?? Date()
-    }
-
-    private func requestAccessAndLoadEvents() {
-        eventStore.requestAccess(to: .event) { (granted, error) in
-            if granted {
-                loadEvents(for: currentDate)
-            } else {
-                print("Доступ к календарю не разрешен")
-            }
-        }
-    }
-
-    private func loadEvents(for date: Date) {
-        let startOfDay = Calendar.current.startOfDay(for: date)
-        let endOfDay = Calendar.current.date(byAdding: .day, value: 1, to: startOfDay)!
-        
-        let predicate = eventStore.predicateForEvents(withStart: startOfDay, end: endOfDay, calendars: nil)
-        events = eventStore.events(matching: predicate)
     }
 }
 
