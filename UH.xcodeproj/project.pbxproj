@@ -6,10 +6,6 @@
 	objectVersion = 77;
 	objects = {
 
-/* Begin PBXBuildFile section */
-		27793F8A2D7D96380065917F /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27793F892D7D962F0065917F /* Config.swift */; };
-/* End PBXBuildFile section */
-
 /* Begin PBXContainerItemProxy section */
 		27EBF2FF2D1C0CFA0089FEC2 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -28,7 +24,6 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		27793F892D7D962F0065917F /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		27EBF2EE2D1C0CF60089FEC2 /* UH.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = UH.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		27EBF2FE2D1C0CFA0089FEC2 /* UHTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = UHTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		27EBF3082D1C0CFA0089FEC2 /* UHUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = UHUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -84,7 +79,6 @@
 				27EBF3012D1C0CFA0089FEC2 /* UHTests */,
 				27EBF30B2D1C0CFA0089FEC2 /* UHUITests */,
 				27EBF2EF2D1C0CF60089FEC2 /* Products */,
-				27793F892D7D962F0065917F /* Config.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -242,7 +236,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				27793F8A2D7D96380065917F /* Config.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
