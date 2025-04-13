@@ -1,13 +1,9 @@
 import SwiftUI
 
-struct Vitamin: Identifiable {
-    let id = UUID()
-    let name: String
-    let shortDescription: String
-    let detailedDescription: String
-}
-
 struct VitaminGuideView: View {
+    @State private var showVitaminSelection = false
+    @State private var showHistory = false
+
     let vitamins: [Vitamin] = [
         Vitamin(name: "Витамин A",
                 shortDescription: "Полезен для зрения и иммунитета",
@@ -155,34 +151,16 @@ struct VitaminGuideView: View {
 
                 NavigationLink(destination: VitaminSelectionView()) {
                     Text("Подобрать витамины")
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .padding()
-                            .background(Color.blue)
-                            .cornerRadius(10)
-                            .padding(.bottom)
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .padding()
+                        .background(Color.blue)
+                        .cornerRadius(10)
+                        .padding(.bottom)
                 }
             }
             .navigationTitle("Справочник")
         }
-    }
-}
-
-struct VitaminDetailView: View {
-    let vitamin: Vitamin
-    
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 15) {
-                Text(vitamin.detailedDescription)
-                    .font(.body)
-                    .padding(.top, 5)
-                
-                Spacer()
-            }
-            .padding()
-        }
-        .navigationTitle(vitamin.name)
     }
 }
 

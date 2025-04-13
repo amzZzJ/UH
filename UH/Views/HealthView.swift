@@ -1,58 +1,68 @@
 import SwiftUI
 
-struct HealthView: View {
+struct HealthDashboardView: View {
     var body: some View {
-        VStack(spacing: 30) {
-            NavigationLink(destination: NutritionView()) {
-                HealthCard(title: "Питание", icon: "leaf.fill", color: .blue)
+        NavigationView {
+            VStack(spacing: 20) {
+                NavigationLink(destination: NutritionView()) {
+                    DashboardButton(
+                        title: "Рецепты",
+                        icon: "leaf.fill",
+                        color: .orange,
+                        width: 300,
+                        height: 150
+                    )
+                }
+                .buttonStyle(PlainButtonStyle())
+                .contentShape(Rectangle())
+                
+                NavigationLink(destination: WaterTrackerView()) {
+                    DashboardButton(
+                        title: "Трекер воды",
+                        icon: "drop.fill",
+                        color: .blue,
+                        width: 300,
+                        height: 150
+                    )
+                }
+                .buttonStyle(PlainButtonStyle())
+                .contentShape(Rectangle())
+                
+                Spacer()
             }
-            .buttonStyle(PlainButtonStyle())
-
-            NavigationLink(destination: WaterTrackerView()) {
-                HealthCard(title: "Трекер воды", icon: "drop.fill", color: .blue)
-            }
-            .buttonStyle(PlainButtonStyle())
-
-            Spacer()
+            .padding()
+            .navigationTitle("Питание")
         }
-        .padding()
-        .navigationTitle("Здоровье")
     }
 }
 
-struct HealthCard: View {
+
+struct DashboardButton: View {
     let title: String
     let icon: String
     let color: Color
-
+    let width: CGFloat
+    let height: CGFloat
+    
     var body: some View {
-        HStack {
-            Image(systemName: icon)
-                .foregroundColor(.white)
-                .font(.title)
-                .frame(width: 50, height: 50)
-                .background(color)
-                .clipShape(Circle())
-
-            Text(title)
-                .font(.title2)
-                .fontWeight(.semibold)
-                .foregroundColor(.black)
-
-            Spacer()
+            VStack(spacing: 10) {
+                Color.clear.overlay(
+                    VStack {
+                        Image(systemName: icon)
+                        Text(title)
+                    }
+                    .foregroundColor(.white)
+                )
+            }
+            .background(color)
+            .cornerRadius(20)
         }
-        .padding()
-        .frame(width: 300, height: 80)
-        .background(Color.white)
-        .cornerRadius(12)
-        .shadow(radius: 5)
-    }
 }
 
-struct HealthView_Previews: PreviewProvider {
+struct HealthDashboardView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationView {
-            HealthView()
+            HealthDashboardView()
         }
     }
 }

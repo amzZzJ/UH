@@ -1,17 +1,19 @@
 import Foundation
 import Combine
+import CoreData
+import SwiftUI
 
 class VitaminSelectionViewModel: ObservableObject {
     @Published var userInput: String = ""
     @Published var vitaminSuggestions: String = ""
     @Published var isLoading: Bool = false
-    @Published var history: [(query: String, response: String)] = []
+    @Published var savedQueries: [VitaminQuery] = []
+    @Published var errorMessage: String?
     
     private let oauthToken: String
     private let folderId: String
     private let apiUrl: String
     private var iamToken: String?
-    
     private var cancellables = Set<AnyCancellable>()
     
     init(oauthToken: String = Config.OAUTH_TOKEN,
@@ -20,6 +22,7 @@ class VitaminSelectionViewModel: ObservableObject {
         self.oauthToken = oauthToken
         self.folderId = folderId
         self.apiUrl = apiUrl
+        fetchSavedQueries()
     }
     
     func generateVitaminSuggestions() {
@@ -29,6 +32,7 @@ class VitaminSelectionViewModel: ObservableObject {
         }
         
         isLoading = true
+        vitaminSuggestions = ""
         
         fetchIAMToken()
             .flatMap { [weak self] token -> AnyPublisher<String, Error> in
@@ -42,21 +46,45 @@ class VitaminSelectionViewModel: ObservableObject {
             .sink { [weak self] completion in
                 self?.isLoading = false
                 if case .failure(let error) = completion {
-                    self?.vitaminSuggestions = "Ошибка: \(error.localizedDescription)"
+                    self?.errorMessage = "Ошибка: \(error.localizedDescription)"
                 }
             } receiveValue: { [weak self] response in
                 guard let self = self else { return }
                 self.vitaminSuggestions = response
-                self.addToHistory(query: self.userInput, response: response)
+                self.saveQuery(query: self.userInput, response: response)
             }
             .store(in: &cancellables)
     }
     
-    private func addToHistory(query: String, response: String) {
-        history.insert((query, response), at: 0)
-        if history.count > 5 {
-            history.removeLast()
+    func fetchSavedQueries() {
+        let request: NSFetchRequest<VitaminQuery> = VitaminQuery.fetchRequest()
+        request.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: false)]
+        
+        do {
+            savedQueries = try CoreDataManager.shared.context.fetch(request)
+        } catch {
+            print("Ошибка при загрузке запросов: \(error)")
         }
+    }
+    
+    private func saveQuery(query: String, response: String) {
+        let context = CoreDataManager.shared.context
+        let newQuery = VitaminQuery(context: context)
+        
+        newQuery.id = UUID()
+        newQuery.query = query
+        newQuery.response = response
+        newQuery.createdAt = Date()
+        
+        CoreDataManager.shared.save()
+        fetchSavedQueries()
+    }
+    
+    func deleteQuery(_ query: VitaminQuery) {
+        let context = CoreDataManager.shared.context
+        context.delete(query)
+        CoreDataManager.shared.save()
+        fetchSavedQueries()
     }
     
     private func fetchIAMToken() -> AnyPublisher<String, Error> {

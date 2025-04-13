@@ -19,7 +19,7 @@ struct MainNavigationView: View {
                 }
                 .tag(2)
 
-            HealthView()
+            HealthDashboardView()
                 .tabItem {
                     Image(systemName: "leaf.fill")
                     Text("Питание")

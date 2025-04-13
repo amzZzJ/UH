@@ -35,7 +35,7 @@ struct WorkoutCardView: View {
                     CoreDataManager.shared.save()
                 }) {
                     Image(systemName: "trash")
-                        .foregroundColor(.red)
+                        .foregroundColor(.orange)
                 }
             }
             .padding()
