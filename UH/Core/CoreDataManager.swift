@@ -6,7 +6,7 @@ class CoreDataManager {
     let container: NSPersistentContainer
 
     init() {
-        container = NSPersistentContainer(name: "WorkoutModel")
+        container = NSPersistentContainer(name: "CoreDataModel")
         container.loadPersistentStores { (_, error) in
             if let error = error {
                 fatalError("Ошибка загрузки CoreData: \(error)")

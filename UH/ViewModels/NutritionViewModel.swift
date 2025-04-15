@@ -108,11 +108,11 @@ class NutritionViewModel: ObservableObject {
             content.title = "Напоминание"
             content.body = "Время завтрака!"
         }
-        if mealType == "breakfast" {
+        if mealType == "lunch" {
             content.title = "Напоминание"
             content.body = "Время обеда!"
         }
-        if mealType == "breakfast" {
+        if mealType == "dinner" {
             content.title = "Напоминание"
             content.body = "Время ужина!"
         }
