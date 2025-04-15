@@ -3,6 +3,7 @@ import SwiftUI
 struct SavedQueriesView: View {
     @ObservedObject var viewModel: VitaminSelectionViewModel
     @State private var expandedQueryID: UUID?
+    @Binding var isPresented: Bool
     
     var body: some View {
         NavigationView {
@@ -48,6 +49,7 @@ struct SavedQueriesView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Готово") {
+                        isPresented = false
                     }
                 }
             }

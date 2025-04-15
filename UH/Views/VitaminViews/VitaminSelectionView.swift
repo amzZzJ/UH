@@ -64,7 +64,7 @@ struct VitaminSelectionView: View {
             }
             .padding()
             .sheet(isPresented: $showingSavedQueries) {
-                SavedQueriesView(viewModel: viewModel)
+                SavedQueriesView(viewModel: viewModel, isPresented: $showingSavedQueries)
             }
         }
     }

@@ -1,5 +1,7 @@
 import SwiftUI
 
+import UserNotifications
+
 struct WorkoutCardView: View {
     var workout: Workout
     @State private var showWorkoutDetail = false
@@ -30,6 +32,7 @@ struct WorkoutCardView: View {
                 Spacer()
 
                 Button(action: {
+                    removeNotifications(for: workout)
                     let context = CoreDataManager.shared.context
                     context.delete(workout)
                     CoreDataManager.shared.save()
@@ -55,5 +58,42 @@ struct WorkoutCardView: View {
         let formatter = DateFormatter()
         formatter.timeStyle = .short
         return formatter.string(from: date)
+    }
+}
+
+func removeNotifications(for workout: Workout) {
+    let center = UNUserNotificationCenter.current()
+    
+    guard let id = workout.id?.uuidString else { return }
+    
+    let workoutPrefix = "workout_"
+    let baseIdentifier = workoutPrefix + id
+    
+    center.getPendingNotificationRequests { requests in
+        var identifiersToRemove = [String]()
+        
+        for request in requests {
+            if request.identifier == baseIdentifier ||
+               request.identifier.hasPrefix("\(baseIdentifier)_") {
+                identifiersToRemove.append(request.identifier)
+            }
+        }
+        
+        if let daysString = workout.dayOfWeek {
+            let days = daysString.components(separatedBy: ",")
+            for day in days {
+                if let index = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"].firstIndex(of: day) {
+                    let weekday = index + 2
+                    identifiersToRemove.append("\(baseIdentifier)_\(weekday)")
+                }
+            }
+        }
+        
+        let uniqueIdentifiers = Array(Set(identifiersToRemove))
+        
+        if !uniqueIdentifiers.isEmpty {
+            center.removePendingNotificationRequests(withIdentifiers: uniqueIdentifiers)
+            print("Удалены уведомления для тренировки: \(uniqueIdentifiers)")
+        }
     }
 }

@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 import CoreData
+import UserNotifications
 
 class AIWorkoutViewModel: ObservableObject {
     @Published var workoutName: String = ""
@@ -31,6 +32,85 @@ class AIWorkoutViewModel: ObservableObject {
         self.apiUrl = apiUrl
     }
     
+    private func scheduleNotification(for workout: Workout) {
+        let content = UNMutableNotificationContent()
+        content.title = "Скоро тренировка: \(workout.name ?? "Без названия")"
+        content.body = "Тренировка начнётся через 30 минут!"
+        content.sound = .default
+
+        let calendar = Calendar.current
+        let prefix = "workout_"
+        let id = prefix + (workout.id?.uuidString ?? UUID().uuidString)
+
+        switch workout.type {
+        case "Разовая":
+            if let date = workout.date, let time = workout.time {
+                var dateComponents = calendar.dateComponents([.year, .month, .day], from: date)
+                let timeComponents = calendar.dateComponents([.hour, .minute], from: time)
+                dateComponents.hour = timeComponents.hour
+                dateComponents.minute = timeComponents.minute
+
+                if let fullDate = calendar.date(from: dateComponents),
+                   let finalDate = calendar.date(byAdding: .minute, value: -30, to: fullDate) {
+
+                    let triggerComponents = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: finalDate)
+                    let trigger = UNCalendarNotificationTrigger(dateMatching: triggerComponents, repeats: false)
+                    let request = UNNotificationRequest(identifier: id, content: content, trigger: trigger)
+                    UNUserNotificationCenter.current().add(request)
+                }
+            }
+
+        case "Еженедельная":
+            let weekdays = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
+            guard let dayOfWeek = workout.dayOfWeek?.components(separatedBy: ",") else { return }
+
+            for day in dayOfWeek {
+                if let index = weekdays.firstIndex(of: day) {
+                    var weekday = index + 2
+                    if weekday > 7 { weekday = 1 } // Вс = 1
+
+                    let timeComponents = calendar.dateComponents([.hour, .minute], from: workout.time ?? Date())
+
+                    if let dateFromTime = calendar.date(from: timeComponents),
+                       let adjustedTime = calendar.date(byAdding: .minute, value: -30, to: dateFromTime) {
+
+                        let adjustedComponents = calendar.dateComponents([.hour, .minute], from: adjustedTime)
+                        var dateComponents = DateComponents()
+                        dateComponents.weekday = weekday
+                        dateComponents.hour = adjustedComponents.hour
+                        dateComponents.minute = adjustedComponents.minute
+
+                        let request = UNNotificationRequest(
+                            identifier: "\(id)_\(weekday)",
+                            content: content,
+                            trigger: UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
+                        )
+                        UNUserNotificationCenter.current().add(request)
+                    }
+                }
+            }
+
+        case "Ежедневная":
+            let timeComponents = calendar.dateComponents([.hour, .minute], from: workout.time ?? Date())
+            if let dateFromTime = calendar.date(from: timeComponents),
+               let adjustedTime = calendar.date(byAdding: .minute, value: -30, to: dateFromTime) {
+
+                let adjustedComponents = calendar.dateComponents([.hour, .minute], from: adjustedTime)
+                var dateComponents = DateComponents()
+                dateComponents.hour = adjustedComponents.hour
+                dateComponents.minute = adjustedComponents.minute
+
+                let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
+                let request = UNNotificationRequest(identifier: id, content: content, trigger: trigger)
+                UNUserNotificationCenter.current().add(request)
+            }
+
+        default:
+            break
+        }
+    }
+
+    
     func togglePlanExpansion(at index: Int) {
         if expandedPlans.contains(index) {
             expandedPlans.remove(index)
@@ -57,7 +137,7 @@ class AIWorkoutViewModel: ObservableObject {
         newWorkout.type = workoutType
         newWorkout.date = selectedDate
         newWorkout.time = selectedTime
-        newWorkout.daysOfWeek = selectedDays.joined(separator: ",")
+        newWorkout.dayOfWeek = selectedDays.joined(separator: ",")
         
         for index in selectedExercises {
             let exercise = Exercise(context: context)
@@ -67,6 +147,7 @@ class AIWorkoutViewModel: ObservableObject {
         }
         
         CoreDataManager.shared.save()
+        scheduleNotification(for: newWorkout)
     }
     
     func generateWorkoutPlan() {

@@ -1,6 +1,7 @@
 import Foundation
 import CoreData
 import SwiftUI
+import UserNotifications
 
 class NutritionViewModel: ObservableObject {
     @Published var userInput: String = ""
@@ -11,15 +12,18 @@ class NutritionViewModel: ObservableObject {
     @Published var activeTab: NutritionTab = .generate
     @Published var savedRecipeIDs: Set<UUID> = []
     
+    @Published var breakfastReminderEnabled: Bool = false
+    @Published var breakfastTime: Date = Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: Date()) ?? Date()
+    @Published var lunchReminderEnabled: Bool = false
+    @Published var lunchTime: Date = Calendar.current.date(bySettingHour: 13, minute: 0, second: 0, of: Date()) ?? Date()
+    @Published var dinnerReminderEnabled: Bool = false
+    @Published var dinnerTime: Date = Calendar.current.date(bySettingHour: 19, minute: 0, second: 0, of: Date()) ?? Date()
+    
     private let OAUTH_TOKEN = Config.OAUTH_TOKEN
     private let FOLDER_ID = Config.FOLDER_ID
     private let API_URL = Config.API_URL
     private var iamToken: String?
     
-    init() {
-        fetchSavedRecipes()
-    }
-
     enum MealType: String, CaseIterable {
         case breakfast = "Завтрак"
         case lunch = "Обед"
@@ -29,6 +33,120 @@ class NutritionViewModel: ObservableObject {
     enum NutritionTab {
         case generate
         case myRecipes
+        case reminders
+    }
+    
+    init() {
+        fetchSavedRecipes()
+        loadReminderSettings()
+        requestNotificationAuthorization()
+    }
+    
+    func requestNotificationAuthorization() {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, _ in
+            if !granted {
+                print("Уведомления не разрешены")
+            }
+        }
+    }
+    
+    func loadReminderSettings() {
+        let defaults = UserDefaults.standard
+        breakfastReminderEnabled = defaults.bool(forKey: "breakfastReminderEnabled")
+        lunchReminderEnabled = defaults.bool(forKey: "lunchReminderEnabled")
+        dinnerReminderEnabled = defaults.bool(forKey: "dinnerReminderEnabled")
+        
+        if let time = defaults.object(forKey: "breakfastTime") as? Date {
+            breakfastTime = time
+        }
+        if let time = defaults.object(forKey: "lunchTime") as? Date {
+            lunchTime = time
+        }
+        if let time = defaults.object(forKey: "dinnerTime") as? Date {
+            dinnerTime = time
+        }
+    }
+    
+    func saveReminderSettings() {
+        let defaults = UserDefaults.standard
+        defaults.set(breakfastReminderEnabled, forKey: "breakfastReminderEnabled")
+        defaults.set(lunchReminderEnabled, forKey: "lunchReminderEnabled")
+        defaults.set(dinnerReminderEnabled, forKey: "dinnerReminderEnabled")
+        defaults.set(breakfastTime, forKey: "breakfastTime")
+        defaults.set(lunchTime, forKey: "lunchTime")
+        defaults.set(dinnerTime, forKey: "dinnerTime")
+        
+        scheduleNotifications()
+    }
+    
+    private func scheduleNotifications() {
+        UNUserNotificationCenter.current().getPendingNotificationRequests { requests in
+            let nutritionIds = requests
+                .filter { $0.identifier.hasPrefix("nutrition_") }
+                .map { $0.identifier }
+            
+            UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: nutritionIds)
+            
+            DispatchQueue.main.async {
+                if self.breakfastReminderEnabled {
+                    self.scheduleMealNotification(for: self.breakfastTime, mealType: "breakfast")
+                }
+                if self.lunchReminderEnabled {
+                    self.scheduleMealNotification(for: self.lunchTime, mealType: "lunch")
+                }
+                if self.dinnerReminderEnabled {
+                    self.scheduleMealNotification(for: self.dinnerTime, mealType: "dinner")
+                }
+            }
+        }
+    }
+    
+    private func scheduleMealNotification(for date: Date, mealType: String) {
+        let content = UNMutableNotificationContent()
+        
+        if mealType == "breakfast" {
+            content.title = "Напоминание"
+            content.body = "Время завтрака!"
+        }
+        if mealType == "breakfast" {
+            content.title = "Напоминание"
+            content.body = "Время обеда!"
+        }
+        if mealType == "breakfast" {
+            content.title = "Напоминание"
+            content.body = "Время ужина!"
+        }
+
+        content.sound = .default
+        content.categoryIdentifier = "nutrition_reminder"
+        
+        let components = Calendar.current.dateComponents([.hour, .minute], from: date)
+        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
+
+        let timeString = String(format: "%02d%02d", components.hour ?? 0, components.minute ?? 0)
+        let identifier = "nutrition_\(mealType)_\(timeString)"
+        
+        UNUserNotificationCenter.current().getPendingNotificationRequests { requests in
+            let oldNotifications = requests.filter {
+                $0.identifier.hasPrefix("nutrition_\(mealType)")
+            }.map { $0.identifier }
+            
+            UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: oldNotifications)
+            
+            let request = UNNotificationRequest(
+                identifier: identifier,
+                content: content,
+                trigger: trigger
+            )
+            
+            UNUserNotificationCenter.current().add(request) { error in
+                if let error = error {
+                    print("Ошибка при установке уведомления для \(mealType): \(error.localizedDescription)")
+                } else {
+                    print("Успешно установлено уведомление: \(identifier)")
+                }
+            }
+        }
     }
     
     func generateRecipes() {
@@ -361,5 +479,19 @@ class NutritionViewModel: ObservableObject {
         }
         
         task.resume()
+    }
+}
+
+extension NutritionViewModel.NutritionTab: CaseIterable {
+    static var allCases: [NutritionViewModel.NutritionTab] {
+        return [.generate, .myRecipes, .reminders]
+    }
+    
+    var title: String {
+        switch self {
+        case .generate: return "Генерация"
+        case .myRecipes: return "Мои рецепты"
+        case .reminders: return "Напоминания"
+        }
     }
 }

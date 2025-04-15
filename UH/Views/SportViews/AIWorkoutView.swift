@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct AIWorkoutView: View {
-    @Environment(\.dismiss) var dismiss
+    @Binding var isPresented: Bool
     @StateObject private var viewModel = AIWorkoutViewModel()
     
     var body: some View {
@@ -51,18 +51,23 @@ struct AIWorkoutView: View {
                         }
                     } else if viewModel.workoutType == "Еженедельная" {
                         Section(header: Text("Выберите дни недели")) {
-                            HStack {
-                                ForEach(viewModel.weekdays, id: \.self) { day in
-                                    Button(action: {
-                                        viewModel.toggleDay(day)
-                                    }) {
-                                        Text(day)
-                                            .padding()
-                                            .background(viewModel.selectedDays.contains(day) ? Color.blue : Color.gray.opacity(0.3))
-                                            .foregroundColor(.white)
-                                            .cornerRadius(8)
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 10) {
+                                    ForEach(viewModel.weekdays, id: \.self) { day in
+                                        Button(action: {
+                                            viewModel.toggleDay(day)
+                                        }) {
+                                            Circle()
+                                                .fill(viewModel.selectedDays.contains(day) ? Color.blue : Color.gray.opacity(0.3))
+                                                .frame(width: 40, height: 40)
+                                                .overlay(
+                                                    Text(day)
+                                                        .foregroundColor(.white)
+                                                        .font(.system(size: 14))
+                                        )}
                                     }
                                 }
+                                .padding(.vertical, 5)
                             }
                         }
                     }
@@ -75,56 +80,14 @@ struct AIWorkoutView: View {
                     
                     Section(header: Text("Выберите упражнения")) {
                         ForEach(viewModel.workoutPlans.indices, id: \.self) { index in
-                            VStack(spacing: 0) {
-                                HStack(spacing: 12) {
-                                    Button(action: {
-                                        viewModel.toggleExerciseSelection(at: index)
-                                    }) {
-                                        Image(systemName: viewModel.selectedExercises.contains(index) ? "checkmark.square.fill" : "square")
-                                            .foregroundColor(viewModel.selectedExercises.contains(index) ? .blue : .gray)
-                                            .font(.system(size: 22))
-                                    }
-                                    .buttonStyle(.plain)
-                                    
-                                    Text("Упражнение \(index + 1)")
-                                        .font(.headline)
-                                        .foregroundColor(.primary)
-                                    
-                                    Spacer()
-                                    
-                                    Button(action: {
-                                        viewModel.togglePlanExpansion(at: index)
-                                    }) {
-                                        Image(systemName: viewModel.expandedPlans.contains(index) ? "chevron.up" : "chevron.down")
-                                            .foregroundColor(.blue)
-                                    }
-                                }
-                                .padding(.vertical, 12)
-                                .padding(.horizontal, 16)
-                                .contentShape(Rectangle())
-                                .onTapGesture {
-                                    viewModel.togglePlanExpansion(at: index)
-                                }
-                                
-                                if viewModel.expandedPlans.contains(index) {
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Divider()
-                                        
-                                        Text(viewModel.workoutPlans[index])
-                                            .font(.body)
-                                            .fixedSize(horizontal: false, vertical: true)
-                                            .padding(.horizontal, 16)
-                                            .padding(.bottom, 12)
-                                            .frame(maxWidth: .infinity, alignment: .leading)
-                                    }
-                                    .transition(.opacity.combined(with: .move(edge: .top)))
-                                }
-                            }
-                            .background(Color(.secondarySystemBackground))
-                            .cornerRadius(10)
-                            .padding(.vertical, 4)
-                            .padding(.horizontal, 8)
-                            .animation(.easeInOut(duration: 0.2), value: viewModel.expandedPlans.contains(index))
+                            ExerciseRowView(
+                                index: index,
+                                content: viewModel.workoutPlans[index],
+                                isSelected: viewModel.selectedExercises.contains(index),
+                                isExpanded: viewModel.expandedPlans.contains(index),
+                                toggleSelection: { viewModel.toggleExerciseSelection(at: index) },
+                                toggleExpansion: { viewModel.togglePlanExpansion(at: index) }
+                            )
                         }
                     }
                 }
@@ -133,7 +96,7 @@ struct AIWorkoutView: View {
             if !viewModel.selectedExercises.isEmpty {
                 Button("Сохранить тренировку") {
                     viewModel.saveWorkout()
-                    dismiss()
+                    isPresented = false
                 }
                 .font(.headline)
                 .foregroundColor(.white)
@@ -143,11 +106,5 @@ struct AIWorkoutView: View {
             }
         }
         .padding()
-    }
-}
-
-struct WorkoutView_Previews: PreviewProvider {
-    static var previews: some View {
-        AddWorkoutView()
     }
 }

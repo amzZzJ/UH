@@ -17,34 +17,16 @@ struct CalendarView: View {
     ) var workouts: FetchedResults<Workout>
     
     private var combinedEvents: [Any] {
-        var events: [Any] = []
-
-        events.append(contentsOf: calendarManager.events)
-            
-        events.append(contentsOf: filteredWorkouts)
-            
-        return events.sorted {
-            let date1: Date
-            let date2: Date
-                
-            if let event1 = $0 as? EKEvent {
-                date1 = event1.startDate
-            } else if let workout1 = $0 as? Workout {
-                date1 = workout1.time ?? Date.distantPast
-            } else {
-                date1 = Date.distantPast
-            }
-                
-            if let event2 = $1 as? EKEvent {
-                date2 = event2.startDate
-            } else if let workout2 = $1 as? Workout {
-                date2 = workout2.time ?? Date.distantPast
-            } else {
-                date2 = Date.distantPast
-            }
-                
-            return date1 < date2
+        let calendarEvents = calendarManager.events.filter { event in
+            Calendar.current.isDate(event.startDate, inSameDayAs: selectedDate)
         }
+        
+        return (calendarEvents as [Any] + filteredWorkouts as [Any])
+            .sorted {
+                let date1 = ($0 as? EKEvent)?.startDate ?? (($0 as? Workout)?.time ?? Date.distantPast)
+                let date2 = ($1 as? EKEvent)?.startDate ?? (($1 as? Workout)?.time ?? Date.distantPast)
+                return date1 < date2
+            }
     }
     
     var body: some View {
@@ -123,7 +105,7 @@ struct CalendarView: View {
                 .offset(y: -10)
             }
             .sheet(isPresented: $showWorkoutScreen) {
-                AddWorkoutView()
+                AddWorkoutView(isPresented: $showWorkoutScreen)
                     .environment(\.managedObjectContext, viewContext)
             }
             .onAppear {
@@ -146,8 +128,10 @@ struct CalendarView: View {
     }
     
     private var filteredWorkouts: [Workout] {
-        workouts.filter { $0.shouldAppear(on: selectedDate) }
+        let result = workouts.filter { $0.shouldAppear(on: selectedDate) }
             .sorted { ($0.time ?? Date()) < ($1.time ?? Date()) }
+
+        return result
     }
     
     private func formattedDate(_ date: Date) -> String {

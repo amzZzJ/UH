@@ -1,8 +1,18 @@
 import SwiftUI
 
 struct HomeHeaderView: View {
-    @Binding var username: String
     @Binding var currentDate: Date
+    
+    @FetchRequest(
+        entity: UserProfile.entity(),
+        sortDescriptors: []
+    ) var userProfiles: FetchedResults<UserProfile>
+    
+    private var username: String {
+        let name = userProfiles.first?.username ?? ""
+        return name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "друг" : name
+    }
+
     
     var body: some View {
         ZStack(alignment: .leading) {

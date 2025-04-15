@@ -1,8 +1,9 @@
 import SwiftUI
+import CoreData
 
 struct ManualWorkoutView: View {
-    @Environment(\.dismiss) var dismiss
     @StateObject private var viewModel = ManualWorkoutViewModel()
+    @Binding var isPresented: Bool
     
     var body: some View {
         Form {
@@ -31,18 +32,22 @@ struct ManualWorkoutView: View {
                 }
             } else if viewModel.workoutType == "Еженедельная" {
                 Section(header: Text("Выберите дни недели")) {
-                    HStack {
-                        ForEach(viewModel.weekdays, id: \.self) { day in
-                            Button(action: {
-                                viewModel.toggleDay(day)
-                            }) {
-                                Text(day)
-                                    .padding()
-                                    .background(viewModel.selectedDays.contains(day) ? Color.blue : Color.gray.opacity(0.3))
-                                    .foregroundColor(.white)
-                                    .cornerRadius(8)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 10) {
+                            ForEach(viewModel.weekdays, id: \.self) { day in
+                                Circle()
+                                    .fill(viewModel.selectedDays.contains(day) ? Color.blue : Color.gray.opacity(0.3))
+                                    .frame(width: 40, height: 40)
+                                    .overlay(
+                                        Text(day)
+                                            .foregroundColor(.white)
+                                    )
+                                    .onTapGesture {
+                                        viewModel.toggleDay(day)
+                                    }
                             }
                         }
+                        .padding(.vertical, 5)
                     }
                 }
             }
@@ -77,7 +82,7 @@ struct ManualWorkoutView: View {
             
             Button("Сохранить") {
                 viewModel.saveWorkout()
-                dismiss()
+                isPresented = false
             }
         }
     }

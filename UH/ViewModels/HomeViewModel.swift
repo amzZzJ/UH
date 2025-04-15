@@ -4,7 +4,8 @@ import SwiftUI
 class HomeViewModel: ObservableObject {
     @Published var currentDate = Date()
     @Published var username: String = UserDefaults.standard.string(forKey: "username") ?? "друг"
-    
+
+    private let weekdays = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"]
     private let viewContext: NSManagedObjectContext
     
     init(context: NSManagedObjectContext) {
@@ -12,12 +13,34 @@ class HomeViewModel: ObservableObject {
     }
 
     func fetchTodaysWorkouts(_ workouts: FetchedResults<Workout>) -> [Workout] {
-        let startOfDay = Calendar.current.startOfDay(for: currentDate)
-        let endOfDay = Calendar.current.date(byAdding: .day, value: 1, to: startOfDay)!
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: currentDate)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+        let currentWeekday = calendar.component(.weekday, from: currentDate)
         
         return workouts.filter { workout in
-            guard let workoutDate = workout.date else { return false }
-            return workout.type == "Ежедневная" || (workoutDate >= startOfDay && workoutDate < endOfDay)
+            switch workout.type {
+            case "Ежедневная":
+                return true
+                
+            case "Еженедельная":
+                guard let daysString = workout.dayOfWeek else { return false }
+                let selectedDays = daysString.components(separatedBy: ",")
+                
+                let workoutWeekdays = selectedDays.compactMap { day -> Int? in
+                    guard let index = weekdays.firstIndex(of: day) else { return nil }
+                    return index + 1
+                }
+                
+                return workoutWeekdays.contains(currentWeekday)
+                
+            case "Разовая":
+                guard let workoutDate = workout.date else { return false }
+                return workoutDate >= startOfDay && workoutDate < endOfDay
+                
+            default:
+                return false
+            }
         }
         .sorted { ($0.time ?? Date()) < ($1.time ?? Date()) }
     }

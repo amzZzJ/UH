@@ -5,12 +5,35 @@ struct NutritionView: View {
     
     var body: some View {
         VStack {
-            Picker("Выберите раздел", selection: $viewModel.activeTab) {
-                Text("Генерация рецептов").tag(NutritionViewModel.NutritionTab.generate)
-                Text("Мои рецепты").tag(NutritionViewModel.NutritionTab.myRecipes)
+            HStack(spacing: 0) {
+                ForEach(NutritionViewModel.NutritionTab.allCases, id: \.self) { tab in
+                    Button(action: {
+                        withAnimation {
+                            viewModel.activeTab = tab
+                        }
+                    }) {
+                        VStack {
+                            Text(tab.title)
+                                .font(.subheadline)
+                                .foregroundColor(viewModel.activeTab == tab ? .orange : .gray)
+                                .padding(.vertical, 12)
+                                .frame(maxWidth: .infinity)
+                            
+                            if viewModel.activeTab == tab {
+                                Capsule()
+                                    .fill(Color.orange)
+                                    .frame(height: 3)
+                            } else {
+                                Capsule()
+                                    .fill(Color.clear)
+                                    .frame(height: 3)
+                            }
+                        }
+                    }
+                }
             }
-            .pickerStyle(SegmentedPickerStyle())
-            .padding()
+            .background(Color(.systemBackground))
+            .padding(.horizontal)
             
             TabView(selection: $viewModel.activeTab) {
                 generateRecipesTab
@@ -18,12 +41,15 @@ struct NutritionView: View {
                 
                 myRecipesTab
                     .tag(NutritionViewModel.NutritionTab.myRecipes)
+                
+                remindersTab
+                    .tag(NutritionViewModel.NutritionTab.reminders)
             }
             .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
         }
         .navigationTitle("Рецепты")
     }
-    
+
     private var generateRecipesTab: some View {
         ScrollView {
             VStack(spacing: 20) {
@@ -87,6 +113,49 @@ struct NutritionView: View {
                 }
             }
             .padding()
+        }
+    }
+    
+    private var remindersTab: some View {
+        Form {
+            Section(header: Text("Завтрак")) {
+                Toggle("Напомнить о завтраке", isOn: $viewModel.breakfastReminderEnabled)
+                
+                if viewModel.breakfastReminderEnabled {
+                    DatePicker("Время",
+                             selection: $viewModel.breakfastTime,
+                             displayedComponents: .hourAndMinute)
+                }
+            }
+            
+            Section(header: Text("Обед")) {
+                Toggle("Напомнить об обеде", isOn: $viewModel.lunchReminderEnabled)
+                
+                if viewModel.lunchReminderEnabled {
+                    DatePicker("Время",
+                             selection: $viewModel.lunchTime,
+                             displayedComponents: .hourAndMinute)
+                }
+            }
+            
+            Section(header: Text("Ужин")) {
+                Toggle("Напомнить об ужине", isOn: $viewModel.dinnerReminderEnabled)
+                
+                if viewModel.dinnerReminderEnabled {
+                    DatePicker("Время",
+                             selection: $viewModel.dinnerTime,
+                             displayedComponents: .hourAndMinute)
+                }
+            }
+            
+            Section {
+                Button("Сохранить настройки") {
+                    viewModel.saveReminderSettings()
+                }
+            }
+        }
+        .onAppear {
+            viewModel.requestNotificationAuthorization()
         }
     }
 }

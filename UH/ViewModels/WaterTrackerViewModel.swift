@@ -62,16 +62,25 @@ class WaterTrackerViewModel: ObservableObject {
                 guard let date = calendar.date(byAdding: .day, value: -dayOffset, to: endDate) else { continue }
                     
                 let dayIntakes = grouped[date] ?? []
-                let totalIntake = dayIntakes.reduce(0) { $0 + ($1.amount ) }
-                    
-                let goal = dayIntakes.first?.goal ?? self.dailyGoal
-                    
+                
+                let totalIntake: Double
+                let goal: Double
+                
+                if dayIntakes.isEmpty {
+                    totalIntake = 0
+                    goal = 200
+                } else {
+                    totalIntake = dayIntakes.reduce(0) { $0 + ($1.amount) }
+                    goal = dayIntakes.first?.goal ?? self.dailyGoal
+                }
+                
                 data.append(DayWaterData(
                     date: date,
                     intake: totalIntake,
                     goal: goal
                 ))
             }
+
 
             weeklyData = data.sorted { $0.date > $1.date }
                 

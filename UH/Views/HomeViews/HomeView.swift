@@ -24,7 +24,7 @@ struct HomeView: View {
     var body: some View {
         NavigationView {
             VStack(alignment: .leading, spacing: 15) {
-                HomeHeaderView(username: $viewModel.username, currentDate: $viewModel.currentDate)
+                HomeHeaderView(currentDate: $viewModel.currentDate)
 
                 let todaysItems = combinedTodaysItems()
                 
@@ -92,7 +92,7 @@ struct HomeView: View {
         let todaysEvents = calendarManager.events.filter { event in
             Calendar.current.isDate(event.startDate, inSameDayAs: viewModel.currentDate)
         }
-        
+
         let combined = (todaysWorkouts as [Any]) + (todaysEvents as [Any])
         
         return combined

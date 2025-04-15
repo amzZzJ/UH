@@ -15,7 +15,6 @@ struct WaterTrackerView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                // Заголовок
                 Text("Водный трекер")
                     .font(.largeTitle)
                     .bold()
@@ -42,6 +41,9 @@ struct WaterTrackerView: View {
                 viewModel.checkForNewDay()
             }
         }
+        .onAppear {
+            viewModel.loadWeeklyData()
+        }
     }
     
     private var goalSection: some View {
@@ -53,6 +55,11 @@ struct WaterTrackerView: View {
             Button("Установить") {
                 if let goal = Double(inputGoal), goal > 0 {
                     viewModel.setGoal(goal)
+
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        viewModel.loadWeeklyData()
+                    }
+
                     inputGoal = ""
                     hideKeyboard()
                 }
@@ -93,6 +100,11 @@ struct WaterTrackerView: View {
             Button("+") {
                 if let amount = Double(inputWater), amount > 0 {
                     viewModel.addWater(amount)
+
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        viewModel.loadWeeklyData()
+                    }
+
                     inputWater = ""
                     hideKeyboard()
                 }
@@ -107,6 +119,10 @@ struct WaterTrackerView: View {
             ForEach([100, 250, 500], id: \.self) { amount in
                 Button("+\(amount)") {
                     viewModel.addWater(Double(amount))
+
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        viewModel.loadWeeklyData()
+                    }
                 }
                 .buttonStyle(.bordered)
             }
@@ -123,7 +139,7 @@ struct WaterTrackerView: View {
     
     private var weeklyStatisticsSection: some View {
         VStack(alignment: .leading, spacing: 15) {
-            Text("Статистика за неделю")
+            Text("Статистика за последние 7 дней")
                 .font(.title2)
                 .bold()
                 .padding(.top, 20)
